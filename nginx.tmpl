@@ -136,15 +136,23 @@ server {
 	    server_name {{ $host }};
           {{ end }}
 	{{ else }}
-	  server_name {{ $host }};
+	  server_name {{ $host }}.dev;
 	{{ end }}
+
+	root /{{ $host }}/webroot;
 
 	{{ if (exists (printf "/etc/nginx/vhost.d/%s" $host)) }}
 	include {{ printf "/etc/nginx/vhost.d/%s" $host }};
 	{{ end }}
 
 	location / {
-		proxy_pass {{ $proto }}://{{ $host }};
+	
+		fastcgi_intercept_errors on;
+    fastcgi_pass {{ $host }};
+    fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+    include /etc/nginx/fastcgi_params;
+
+		#proxy_pass {{ $proto }}://{{ $host }};
 		{{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}
 		auth_basic	"Restricted {{ $host }}";
 		auth_basic_user_file	{{ (printf "/etc/nginx/htpasswd/%s" $host) }};
